@@ -1,11 +1,12 @@
 'use strict';
 
 const Controller = require('egg').Controller;
-
+const mongo = require('../utils/mongo');
 class ProjectController extends Controller {
   async getTemplate() {
     const { ctx } = this;
-    ctx.body = [{ a: 1, b: 2 }];
+    const data = await mongo().query('template');
+    ctx.body = data;
   }
 }
 
