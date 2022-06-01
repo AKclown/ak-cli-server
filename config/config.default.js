@@ -18,6 +18,20 @@ module.exports = appInfo => {
   // add your middleware config here
   config.middleware = [];
 
+  // 跟demo有点差异，因为demo直接导出这个属性
+  config.io = {
+    namespace: {
+      '/': {
+        connectionMiddleware: ['auth'],
+        packetMiddleware: ['filter'],
+      },
+      '/chat': {
+        connectionMiddleware: ['auth'],
+        packetMiddleware: [],
+      },
+    },
+  };
+
   // add your user config here
   const userConfig = {
     // myAppName: 'egg',

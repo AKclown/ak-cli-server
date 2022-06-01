@@ -1,6 +1,7 @@
 {
   "extends": "eslint-config-egg",
   "rules": {
-    "quotes": "off"
+    "quotes": "off",
+    "array-bracket-spacing":"off"
   }
 }
