@@ -2,6 +2,11 @@
 
 'use strict';
 
+// redis相关常量
+const REDIS_PORT = 6379;
+const REDIS_HOST = '127.0.0.1';
+const REDIS_PWD = '';
+
 /**
  * @param {Egg.EggAppInfo} appInfo app info
  */
@@ -29,6 +34,15 @@ module.exports = appInfo => {
         connectionMiddleware: ['auth'],
         packetMiddleware: [],
       },
+    },
+  };
+
+  config.redis = {
+    client: {
+      port: REDIS_PORT,
+      host: REDIS_HOST,
+      password: REDIS_PWD,
+      db: 0,
     },
   };
 
