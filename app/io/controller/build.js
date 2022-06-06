@@ -37,6 +37,22 @@ async function prepare(cloudBuildTask, socket, helper) {
   }));
 }
 
+async function download(cloudBuildTask, socket, helper) {
+  socket.emit('build', helper.parseMsg('download repo', {
+    message: '开始下载源码',
+  }));
+  const prepareRes = await cloudBuildTask.download();
+  if (!prepareRes || prepareRes.code === FAILED) {
+    socket.emit('build', helper.parseMsg('download failed', {
+      message: '源码下载失败',
+    }));
+    return;
+  }
+  socket.emit('build', helper.parseMsg('download repo', {
+    message: '源码下载成功',
+  }));
+}
+
 module.exports = app => {
   class Controller extends app.Controller {
     async index() {
@@ -46,7 +62,10 @@ module.exports = app => {
       // 创建cloudBuildTask实例化
       const cloudBuildTask = await createCloudBuildTask(ctx, app);
       try {
+        // 准备
         await prepare(cloudBuildTask, socket, helper);
+        // 源码下载
+        await download(cloudBuildTask, socket, helper);
       } catch (error) {
         socket.emit('build', helper.parseMsg('error', {
           message: '云构建失败，失败原因:' + error.message,

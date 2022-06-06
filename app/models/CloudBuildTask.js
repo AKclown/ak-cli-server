@@ -1,4 +1,5 @@
 'use strict';
+const fs = require('fs');
 const path = require('path');
 const userhome = require('userhome')();
 const fse = require('fs-extra');
@@ -28,6 +29,20 @@ class CloudBuildTask {
     fse.emptyDirSync(this._dir);
     this._git = new Git(this._dir);
     return this.success();
+  }
+
+  async download() {
+    // clone 仓库
+    await this._git.clone(this._repo);
+    // !注意这里不在是this._dir，而是在这个路径的基础下载创建新的版本目录
+    this._git = new Git(this._sourceCodeDir);
+    // 切换branch分支， git checkout -b dev/1.1.1 origin/dev/1.1.1
+    await this._git.checkout([
+      '-b',
+      this._branch,
+      `origin/${this._branch}`,
+    ]);
+    return fs.existsSync(this._sourceCodeDir) ? this.success() : this.failed();
   }
 
   // 成功返回
