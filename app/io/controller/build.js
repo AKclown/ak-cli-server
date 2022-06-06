@@ -53,6 +53,22 @@ async function download(cloudBuildTask, socket, helper) {
   }));
 }
 
+async function install(cloudBuildTask, socket, helper) {
+  socket.emit('build', helper.parseMsg('install', {
+    message: '开始安装依赖',
+  }));
+  const prepareRes = await cloudBuildTask.install();
+  if (!prepareRes || prepareRes.code === FAILED) {
+    socket.emit('build', helper.parseMsg('install failed', {
+      message: '安装依赖失败',
+    }));
+    return;
+  }
+  socket.emit('build', helper.parseMsg('install', {
+    message: '安装依赖成功',
+  }));
+}
+
 module.exports = app => {
   class Controller extends app.Controller {
     async index() {
@@ -66,6 +82,8 @@ module.exports = app => {
         await prepare(cloudBuildTask, socket, helper);
         // 源码下载
         await download(cloudBuildTask, socket, helper);
+        // 依赖安装
+        await install(cloudBuildTask, socket, helper);
       } catch (error) {
         socket.emit('build', helper.parseMsg('error', {
           message: '云构建失败，失败原因:' + error.message,

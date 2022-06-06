@@ -31,6 +31,7 @@ class CloudBuildTask {
     return this.success();
   }
 
+  // 下载源码
   async download() {
     // clone 仓库
     await this._git.clone(this._repo);
@@ -43,6 +44,46 @@ class CloudBuildTask {
       `origin/${this._branch}`,
     ]);
     return fs.existsSync(this._sourceCodeDir) ? this.success() : this.failed();
+  }
+
+  // 安装依赖
+  async install() {
+    let res = true;
+    res && (res = await this.execCommand('npm install --registry https://registry.npm.taobao.org'));
+    return res ? this.success() : this.failed();
+  }
+
+  // 执行脚本方法
+  execCommand(command) {
+    // npm install --> ['npm','install']
+    const commands = command.split(' ');
+    if (commands.length === 0) {
+      return null;
+    }
+    const firstCommand = commands[0];
+    const leftCommand = commands.slice(1) || [];
+    return new Promise(resolve => {
+      const p = exec(firstCommand, leftCommand, {
+        cwd: this._sourceCodeDir,
+      }, { stdio: 'pipe' });
+      // 日志监听
+      p.on('error', error => {
+        this._logger.error('build error', error);
+        resolve(false);
+      });
+      p.on('exit', code => {
+        this._logger.info('build exit', code);
+        resolve(true);
+      });
+      // $ 如下两个监听都不会中断，最终还是得执行到error|exit的监听才结束，所以不需要调用resolve方法
+      p.stdout.on('data', data => {
+        // 这里的data是buffer类型，需要toString一下
+        this._ctx.socket.emit('building', data.toString());
+      });
+      p.stderr.on('data', data => {
+        this._ctx.socket.emit('building', data.toString());
+      });
+    });
   }
 
   // 成功返回
@@ -59,8 +100,14 @@ class CloudBuildTask {
   response(code, message, data) {
     return { code, message, data };
   }
+}
 
-
+// 执行 脚本命令
+function exec(command, args, options) {
+  const win32 = process.platform === 'win32';
+  const cmd = win32 ? 'cmd' : command;
+  const cmdArgs = win32 ? ['/c'].concat(command, args) : args;
+  return require('child_process').spawn(cmd, cmdArgs, options || {});
 }
 
 module.exports = CloudBuildTask;
