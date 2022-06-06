@@ -48,8 +48,7 @@ class CloudBuildTask {
 
   // 安装依赖
   async install() {
-    let res = true;
-    res && (res = await this.execCommand('npm install --registry https://registry.npm.taobao.org'));
+    const res = await this.execCommand('npm install --registry https://registry.npm.taobao.org');
     return res ? this.success() : this.failed();
   }
 
@@ -86,6 +85,15 @@ class CloudBuildTask {
     });
   }
 
+  // 执行构建
+  async build() {
+    let res = false;
+    if (checkCommand(this._buildCmd)) {
+      res = await this.execCommand(this._buildCmd);
+    }
+    return res ? this.success() : this.failed();
+  }
+
   // 成功返回
   success(message, data) {
     return this.response(SUCCESS, message, data);
@@ -100,6 +108,18 @@ class CloudBuildTask {
   response(code, message, data) {
     return { code, message, data };
   }
+}
+
+// 检查命令
+function checkCommand(command) {
+  if (command) {
+    const commands = command.split(' ');
+    if (commands.length === 0 || ['npm', 'cnpm'].indexOf(commands[0] < 0)) {
+      return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 // 执行 脚本命令

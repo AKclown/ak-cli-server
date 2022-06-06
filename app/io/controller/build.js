@@ -21,6 +21,7 @@ async function createCloudBuildTask(ctx, app) {
   }, ctx);
 }
 
+// 构建准备工作
 async function prepare(cloudBuildTask, socket, helper) {
   socket.emit('build', helper.parseMsg('prepare', {
     message: '开始执行构建前准备工作',
@@ -37,12 +38,13 @@ async function prepare(cloudBuildTask, socket, helper) {
   }));
 }
 
+// 下载源码
 async function download(cloudBuildTask, socket, helper) {
   socket.emit('build', helper.parseMsg('download repo', {
     message: '开始下载源码',
   }));
-  const prepareRes = await cloudBuildTask.download();
-  if (!prepareRes || prepareRes.code === FAILED) {
+  const downloadRes = await cloudBuildTask.download();
+  if (!downloadRes || downloadRes.code === FAILED) {
     socket.emit('build', helper.parseMsg('download failed', {
       message: '源码下载失败',
     }));
@@ -53,12 +55,13 @@ async function download(cloudBuildTask, socket, helper) {
   }));
 }
 
+// 安装依赖
 async function install(cloudBuildTask, socket, helper) {
   socket.emit('build', helper.parseMsg('install', {
     message: '开始安装依赖',
   }));
-  const prepareRes = await cloudBuildTask.install();
-  if (!prepareRes || prepareRes.code === FAILED) {
+  const installRes = await cloudBuildTask.install();
+  if (!installRes || installRes.code === FAILED) {
     socket.emit('build', helper.parseMsg('install failed', {
       message: '安装依赖失败',
     }));
@@ -66,6 +69,23 @@ async function install(cloudBuildTask, socket, helper) {
   }
   socket.emit('build', helper.parseMsg('install', {
     message: '安装依赖成功',
+  }));
+}
+
+// 云构建
+async function build(cloudBuildTask, socket, helper) {
+  socket.emit('build', helper.parseMsg('build', {
+    message: '开始启动云构建',
+  }));
+  const buildRes = await cloudBuildTask.build();
+  if (!buildRes || buildRes.code === FAILED) {
+    socket.emit('build', helper.parseMsg('build failed', {
+      message: '云构建任务失败',
+    }));
+    return;
+  }
+  socket.emit('build', helper.parseMsg('build', {
+    message: '云构建任务成功',
   }));
 }
 
@@ -84,6 +104,8 @@ module.exports = app => {
         await download(cloudBuildTask, socket, helper);
         // 依赖安装
         await install(cloudBuildTask, socket, helper);
+        // 云构建
+        await build(cloudBuildTask, socket, helper);
       } catch (error) {
         socket.emit('build', helper.parseMsg('error', {
           message: '云构建失败，失败原因:' + error.message,
