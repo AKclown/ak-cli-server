@@ -3,6 +3,5 @@
 module.exports = () => {
   return async (ctx, next) => {
     await next();
-    console.log('packet response!');
   };
 };
